@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 import numpy as np
-from scipy.signal import convolve2d
 from scipy.ndimage import convolve, median_filter 
 
 class Filtro(ABC):

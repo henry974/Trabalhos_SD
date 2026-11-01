@@ -3,9 +3,9 @@ from PIL import Image
 
 class Imagem:
     def __init__(self, dados: np.ndarray):
-        arr = np.asarray(dados, dtype=np.float32)
+        arr = np.ascontiguousarray(dados, dtype=np.float32)
         if arr.ndim == 2:
-            self.dados = arr[:, :, np.newaxis] # Converte Cinza (H, W) para (H, W, 1)
+            self.dados = arr[:, :, np.newaxis]
         elif arr.ndim == 3:
             self.dados = arr
         else:
@@ -23,22 +23,39 @@ class Imagem:
     def canais(self) -> int:
         return self.dados.shape[2]
 
+    def obter_fatia(self, linha_inicio: int, linha_fim: int) -> np.ndarray:
+        if linha_inicio < 0 or linha_fim > self.altura or linha_inicio >= linha_fim:
+            raise ValueError(f"Limites inválidos: {linha_inicio} até {linha_fim} (Altura total: {self.altura})")
+            
+        return self.dados[linha_inicio:linha_fim, :, :]
+
+    def substituir_fatia(self, linha_inicio: int, linha_fim: int, fatia: np.ndarray):
+        if fatia.shape[0] != (linha_fim - linha_inicio):
+            raise ValueError("O tamanho da fatia recebida não bate com os limites de substituição.")
+            
+        self.dados[linha_inicio:linha_fim, :, :] = fatia
+
     @classmethod
     def from_arquivo(cls, caminho: str):
         Image.MAX_IMAGE_PIXELS = None
         
         with Image.open(caminho) as img:
-            if img.mode in ('RGBA', 'LA', 'P'):
+            if img.mode in ('RGBA', 'LA', 'P', 'CMYK'):
                 img = img.convert('RGB')
                 
             arr_bruto = np.array(img)
             
-            if arr_bruto.dtype == np.uint16 or arr_bruto.dtype == np.int32 or img.mode.startswith('I'):
-                fator_normalizacao = 65535.0
+            if arr_bruto.dtype in (np.float32, np.float64):
+                dados = arr_bruto.astype(np.float32)
+                del arr_bruto
+            elif arr_bruto.dtype in (np.uint16, np.int32) or img.mode.startswith('I'):
+                dados = arr_bruto.astype(np.float32)
+                del arr_bruto
+                dados /= 65535.0
             else:
-                fator_normalizacao = 255.0
-                
-            dados = arr_bruto.astype(np.float32) / fator_normalizacao
+                dados = arr_bruto.astype(np.float32)
+                del arr_bruto
+                dados /= 255.0
             
             return cls(dados)
 
@@ -49,7 +66,10 @@ class Imagem:
         
         if self.canais == 1:
             img_pil = Image.fromarray(dados_uint8[:, :, 0], mode='L')
-        else:
+        elif self.canais == 3:
             img_pil = Image.fromarray(dados_uint8, mode='RGB')
-            
+        elif self.canais == 4:
+            img_pil = Image.fromarray(dados_uint8, mode='RGBA')
+        else:
+            img_pil = Image.fromarray(dados_uint8[:, :, :3], mode='RGB')            
         img_pil.save(caminho)
