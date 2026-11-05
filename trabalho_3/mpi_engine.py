@@ -111,6 +111,8 @@ class MPIEngine:
         if self.rank == 0:
             matriz_final = imagem_final_plana.reshape((H, W, C))
             imagem.substituir_fatia(0, H, matriz_final)
+            nome_arquivo = f"resultado_{str(filtro).lower()}.png"
+            imagem.salvar(nome_arquivo)
             
         self.comm.Barrier()
         

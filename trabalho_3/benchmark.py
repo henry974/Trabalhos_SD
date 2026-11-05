@@ -40,7 +40,7 @@ def rodar_benchmark(imagens):
 
         for caminho_imagem in imagens:
             nome_img = os.path.basename(caminho_imagem)
-            print(f"\n[{nome_img.upper()}] A iniciar bateria de testes...")
+            print(f"\n[{nome_img.upper()}] Iniciando bateria de testes...")
             
             for engine in ENGINES:
                 print(f"--- Motor: {engine.upper()} ---")
