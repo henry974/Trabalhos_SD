@@ -61,9 +61,14 @@ def iniciar_auditoria_streaming():
 
     spark = (
         SparkSession.builder.appName("AuditoriaAmbientalTempoReal")
+        .master("local[2]")
         .config("spark.jars.packages", pacote_kafka)
+        .config("spark.sql.shuffle.partitions", "2")
+        .config("spark.driver.memory", "1g")
+        .config("spark.ui.enabled", "false")
         .getOrCreate()
     )
+
     spark.sparkContext.setLogLevel("WARN")
 
     @pandas_udf(ESQUEMA_INFERENCIA_ML)
@@ -107,7 +112,7 @@ def iniciar_auditoria_streaming():
         "topic", config.TOPICO_ERROS_SCHEMA
     ).option(
         "checkpointLocation", f"{config.DIRETORIO_CHECKPOINT}/dlq"
-    ).start()
+    ).trigger(processingTime="2 seconds").start()
 
     fluxo_auditado = (
         fluxo_decodificado.filter(col("leitura").isNotNull())
@@ -128,7 +133,7 @@ def iniciar_auditoria_streaming():
 
     fluxo_auditado.select(
         "factory_id", "ts", "co2_ppm", "fraude_detectada", "probabilidade", "motivos"
-    ).writeStream.outputMode("append").format("console").option("truncate", False).start()
+    ).writeStream.outputMode("append").format("console").option("truncate", False).trigger(processingTime="2 seconds").start()
 
     fluxo_auditado.filter(col("fraude_detectada")).select(
         col("factory_id").alias("key"),
@@ -149,7 +154,7 @@ def iniciar_auditoria_streaming():
         "topic", config.TOPICO_ALERTAS
     ).option(
         "checkpointLocation", f"{config.DIRETORIO_CHECKPOINT}/alertas"
-    ).start()
+    ).trigger(processingTime="2 seconds").start()
 
     print("Motor PySpark em execução...")
     spark.streams.awaitAnyTermination()
