@@ -97,6 +97,7 @@ def iniciar_auditoria_streaming():
         .option("kafka.bootstrap.servers", config.KAFKA_BROKER)
         .option("subscribe", config.TOPICO_TELEMETRIA)
         .option("startingOffsets", "latest")
+        .option("failOnDataLoss", "false")
         .load()
     )
 
