@@ -2,8 +2,8 @@ import random
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from schema import TelemetryEvent
-from fraud import Fraud
+from .schema import TelemetryEvent
+from .fraud import Fraud
 
 
 class HonestFactory:

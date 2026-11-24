@@ -1,0 +1,9 @@
+*.pkl
+.venv/
+venv/
+__pycache__/
+*.pyc
+dados_historicos.csv
+data/
+models/
+checkpoints_spark/
